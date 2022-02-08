@@ -18,11 +18,6 @@
                     "type": "integer",
                     "minimum": 30000,
                     "maximum": 31536000000
-                },
-                "checkinterval": {
-                    "type": "integer",
-                    "minimum": 6000,
-                    "maximum": 6000
                 }
             }
         },

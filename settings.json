@@ -1,0 +1,74 @@
+{
+    "Overview":{
+        "_comment1": "本ファイルは各サービスの重要なキーを含みます。",
+        "_comment2": "絶対に他者に公開するなど行わないようにしてください。"
+    },
+    "General": {
+        "_comment1": "twitchuser    配信開始を監視し、通知するTwtichID名",
+        "_comment2": "intervalMs    配信しているか確認する間隔(msec)",
+        "_comment3": "              設定可能範囲(30000-31536000000)",
+        "_comment4": "              早くしてもTwitch側が更新されていないのである程度長めにしてください。",
+
+        "twitchuser": "",
+        "intervalMs": 30000
+    },
+    "TwitchAuth": {
+        "_comment1": "Twitchにアクセスするためのキー",
+        "_comment2": "Twitchのデベロッパーサイトからアプリを登録して入手",
+        "_comment3": "https: //dev.twitch.tv/",
+        "_comment4": "client_id:    クライアントID",
+        "_comment5": "client_secret:クライアントの秘密",
+
+        "client_id": "",
+        "client_secret": ""
+    },
+    "TwitterAuth": {
+        "_comment1": "Twitterにアクセスするためのキー",
+        "_comment2": "Twitterのデベロッパーサイトからアプリを登録して入手",
+        "_comment3": "https://developer.twitter.com/en/",
+        "_comment4": "appKey:      API Key and Secret",
+        "_comment5": "appSecret:   API Key and Secret",
+        "_comment6": "accessToken: Access Token and Secret",
+        "_comment7": "accessSecret:Access Token and Secret",
+
+        "appKey": "",
+        "appSecret": "",
+        "accessToken": "",
+        "accessSecret": ""
+    },
+    "TwitterPostSettings": {
+        "_comment1": "endpost:      配信を終了時にpostするか",
+        "_comment2": "              true:postする",
+        "_comment3": "              false:postしない",
+        "_comment4": "replyposttree:配信内容を変更した場合、開始時の返信でpostするかどうか",
+        "_comment5": "              true:返信にする",
+        "_comment6": "              false:単独にする",
+        "_comment7": "endposttree:  配信を終了した場合、開始時の返信でpostするかどうか",
+        "_comment8": "              true:返信にする",
+        "_comment9": "              false:単独にする",
+
+        "endpost": true,
+        "replyposttree": true,
+        "endposttree": true
+    },
+    "TwitterPostValue": {
+        "_comment1": "各タイミングでpostする内容を変更できます。",
+        "_comment2": "StreamStart: 配信開始時",
+        "_comment3": "StreamChange:ゲーム、タイトル変更時",
+        "_comment4": "StreamEnd:   配信終了時",
+        "_comment5": "post内にTwitchの情報を入れたい場合は下記の記載を行ってください。",
+        "_comment6": "配信タイトル:{title}",
+        "_comment7": "配信ゲーム名:{gamename}",
+        "_comment8": "TwitchID:   {twitchuser}",
+        "_comment9": "TwitchURL:  {twitchURL}",
+        "_comment10": "改行を入れたい場合は\nと入力してください。",
+
+        "StreamStart": "{title} ({gamename})配信開始！\n{twitchURL}",
+        "StreamChange": "配信を「{title}」に変更しました！\n{twitchURL}",
+        "StreamEnd": "本日の配信は終了しました。また次回お楽しみに！\n{twitchURL}"
+    },
+    "Test":{
+        "_comment1": "テストモードがtrueの場合、Twitterにpostせずコンソールにだけその内容を表示します",
+        "testmode":true
+    }
+}
