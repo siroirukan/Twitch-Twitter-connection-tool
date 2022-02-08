@@ -1,0 +1,126 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "type": "object",
+    "properties": {
+        "General": {
+            "required": [
+                "twitchuser",
+                "intervalMs",
+                "checkinterval"
+            ],
+            "type": "object",
+            "properties": {
+                "twitchuser": {
+                    "type": "string",
+                    "pattern": "^[0-9a-zA-Z]{1,25}$"
+                },
+                "intervalMs": {
+                    "type": "integer",
+                    "minimum": 30000,
+                    "maximum": 31536000000
+                },
+                "checkinterval": {
+                    "type": "integer",
+                    "minimum": 6000,
+                    "maximum": 6000
+                }
+            }
+        },
+        "TwitchAuth": {
+            "required": [
+                "client_id",
+                "client_secret"
+            ],
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string",
+                    "pattern": "^[0-9a-zA-Z]{30}$"
+                },
+                "client_secret": {
+                    "type": "string",
+                    "pattern": "^[0-9a-zA-Z]{30}$"
+                }
+            }
+        },
+        "TwitterAuth": {
+            "required": [
+                "appKey",
+                "appSecret",
+                "accessToken",
+                "accessSecret"
+            ],
+            "type": "object",
+            "properties": {
+                "appKey": {
+                    "type": "string",
+                    "pattern": "^[0-9a-zA-Z]{25}$"
+                },
+                "appSecret": {
+                    "type": "string",
+                    "pattern": "^[0-9a-zA-Z]{50}$"
+                },
+                "accessToken": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "accessSecret": {
+                    "type": "string",
+                    "pattern": "^[0-9a-zA-Z]{45}$"
+                }
+            }
+        },
+        "TwitterPostSettings": {
+            "required": [
+                "endpost",
+                "replyposttree",
+                "endposttree"
+            ],
+            "type": "object",
+            "properties": {
+                "endpost": {
+                    "type": "boolean"
+                },
+                "replyposttree": {
+                    "type": "boolean"
+                },
+                "endposttree": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "TwitterPostValue": {
+            "required": [
+                "StreamStart",
+                "StreamChange",
+                "StreamEnd"
+            ],
+            "type": "object",
+            "properties": {
+                "StreamStart": {
+                    "type": "string",
+                    "maxLength": 140
+                },
+                "StreamChange": {
+                    "type": "string",
+                    "maxLength": 140
+                },
+                "StreamEnd": {
+                    "type": "string",
+                    "maxLength": 140
+                }
+            }
+        },
+        "Test": {
+            "required": [
+                "testmode"
+            ],
+            "type": "object",
+            "properties": {
+                "testmode": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}
