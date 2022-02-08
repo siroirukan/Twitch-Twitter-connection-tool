@@ -22,6 +22,11 @@
 
 settings.jsonを必要な情報に変更してください。
 
+## 実行方法
+
+node TwitchStartPost.js
+※ディレクトリ指定は任意で
+
 ## ライセンス
 
 本ツールはMIT Licenseです。
