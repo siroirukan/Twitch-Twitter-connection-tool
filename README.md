@@ -7,6 +7,7 @@
 ### インストール関連
 - Node.JS v14.x系で確認(最低でも10.x系以上)
 - node-fetch v2.x系のみ動作(v3.x系では動きません)
+- Twitter-API-V2 最新
 - log4js 最新
 - ajv v8.x以上
 - ajv-i18n 最新
