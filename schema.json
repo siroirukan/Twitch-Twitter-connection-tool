@@ -5,8 +5,7 @@
         "General": {
             "required": [
                 "twitchuser",
-                "intervalMs",
-                "checkinterval"
+                "intervalMs"
             ],
             "type": "object",
             "properties": {
