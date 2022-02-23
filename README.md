@@ -18,6 +18,11 @@
 - TwitterアプリケーションのAPI KeyおよびSecret
 - TwitterのAccess TokenおよびSecret
 
+## 導入手順
+
+以下のリンクを参照してください。
+https://note.com/siroirukan/n/n1bec250f8b92
+
 ## 設定
 
 settings.jsonを必要な情報に変更してください。
