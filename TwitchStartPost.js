@@ -51,7 +51,7 @@ async function authTwitch(options) {
         // Twitchサーバー自体に接続できなかった場合のエラーハンドル
         logger.error("Twitch認証サーバーへのネットワーク接続に失敗した可能性があります。");
         const message = 'Twitch認証サーバーへのネットワーク接続に失敗した可能性があります。\n設定およびネットワークを確認してください。'
-        async () => { await DiscordAlert(message) }
+        DiscordAlert(message)
         throw new Error(err);
     });
     // Twitchサーバーには接続できたが、認証に失敗したか応答がなかったかのエラーハンドル
@@ -60,7 +60,7 @@ async function authTwitch(options) {
         logger.error(`HTTP ERROR: ${response.status}`);
         logger.error(`メッセージ: ${response.statusText}`);
         const message = 'Twitchの認証に失敗したか、サーバーが応答しませんでした。\n設定およびTwitchサーバーに障害が発生していないか確認してください。'
-        async () => { await DiscordAlert(message) }
+        DiscordAlert(message)
         throw new Error(response.statusText);
     };
     tabody = await response.json();
@@ -68,7 +68,7 @@ async function authTwitch(options) {
     if (!tabody.access_token) {
         logger.error("Twitchの認証に失敗しました。");
         const message = 'Twitchの認証に失敗しました。\n設定を確認してください。'
-        async () => { await DiscordAlert(message) }
+        DiscordAlert(message)
         throw new Error(tabody);
     }
     return tabody;
