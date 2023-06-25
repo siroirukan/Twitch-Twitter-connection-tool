@@ -1,6 +1,6 @@
 {
   "name": "ttc",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "本ツールはTwitchの配信状況に応じて自動でTwitterにpostするツールです。",
   "main": "TwitchStartPost.js",
   "dependencies": {
