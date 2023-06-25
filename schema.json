@@ -11,7 +11,7 @@
             "properties": {
                 "twitchuser": {
                     "type": "string",
-                    "pattern": "^[0-9a-zA-Z]{1,25}$"
+                    "pattern": "^[0-9a-zA-Z_]{1,25}$"
                 },
                 "intervalMs": {
                     "type": "integer",
@@ -68,7 +68,9 @@
             "required": [
                 "endpost",
                 "replyposttree",
-                "endposttree"
+                "endposttree",
+                "repeatpost",
+                "repeatcycle"
             ],
             "type": "object",
             "properties": {
@@ -80,6 +82,17 @@
                 },
                 "endposttree": {
                     "type": "boolean"
+                },
+                "repeatpost": {
+                    "type": "boolean"
+                },
+                "repeatcycle": {
+                    "type": "integer",
+                    "minimum": 30,
+                    "maximum": 1440
+                },
+                "TwitterBlue": {
+                    "type": "boolean"
                 }
             }
         },
@@ -87,22 +100,58 @@
             "required": [
                 "StreamStart",
                 "StreamChange",
-                "StreamEnd"
+                "StreamEnd",
+                "StreamCycle"
             ],
             "type": "object",
             "properties": {
                 "StreamStart": {
                     "type": "string",
-                    "maxLength": 140
+                    "maxLength": 120
                 },
                 "StreamChange": {
                     "type": "string",
-                    "maxLength": 140
+                    "maxLength": 120
                 },
                 "StreamEnd": {
                     "type": "string",
-                    "maxLength": 140
+                    "maxLength": 120
+                },
+                "StreamCycle": {
+                    "type": "string",
+                    "maxLength": 120
                 }
+            }
+        },
+        "DiscordSettings":{
+            "required": [
+                "enable",
+                "disp_username",
+                "mention",
+                "alart_userID",
+                "WebhookURL"
+            ],            
+            "type": "object",
+            "properties": {
+                "enable": {
+                    "type": "boolean"
+                },
+                "disp_username":{
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "mention": {
+                    "type": "boolean"
+                },
+                "alart_userID":{
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "WebhookURL":{
+                    "type": "string",
+                    "pattern": "^https:\/\/discord.com\/api\/webhooks\/.*$"
+                }
+
             }
         },
         "Test": {

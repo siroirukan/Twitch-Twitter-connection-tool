@@ -17,6 +17,7 @@
 - TwitchアプリケーションのClientIDおよびClientSecret
 - TwitterアプリケーションのAPI KeyおよびSecret
 - TwitterのAccess TokenおよびSecret
+- DiscordのWebhook URL
 
 ## 導入手順
 
