@@ -28,10 +28,14 @@ const maxretry = 3
 var streamstart = 0;
 var cyclecount = 1;
 var StreamStart = settings.TwitterPostValue.StreamStart
-var replyposttree = settings.TwitterPostSettings.replyposttree
-var endposttree = settings.TwitterPostSettings.endposttree
-var postretry = 0;
+var twreplyposttree = settings.TwitterPostSettings.replyposttree
+var twendposttree = settings.TwitterPostSettings.endposttree
+var missreplyposttree = settings.MisskeyPostSettings.replyposttree
+var missendposttree = settings.MisskeyPostSettings.endposttree
+var twpostretry = 0;
+var misspostretry = 0
 var maxpostretry = 3;
+var nexttime = Date.now() + settings.General.intervalMs;
 
 
 /**
@@ -171,99 +175,187 @@ function mediaids_save(media_ids) {
 async function posttweet(rClient, mode, pv, twitchbody) {
     var imageflg = false;
     //配信終了連絡は画像を用いない
-    if (mode != "end") {
-        for (twi in twimages) {
-            if (twitchbody.data[0].game_name == twimages[twi].category) {
-                if (!twimages[twi].mediaids.length) {
-                    const twchk = require('fs');
-                    if (twchk.existsSync(twimages[twi].image)) {
-                        var mediaIDs = await Promise.all([
-                            // file path
-                            rClient.v1.uploadMedia(twimages[twi].image)
-                        ])
-                        imageflg = true;
+    if (settings.TwitterAuth.enable) {
+        if (mode != "end") {
+            for (twi in twimages) {
+                if (twitchbody.data[0].game_name == twimages[twi].category) {
+                    if (!twimages[twi].mediaids.length) {
+                        const twchk = require('fs');
+                        if (twchk.existsSync(twimages[twi].image)) {
+                            var mediaIDs = await Promise.all([
+                                // file path
+                                rClient.v1.uploadMedia(twimages[twi].image)
+                            ])
+                            imageflg = true;
+                        } else {
+                            logger.trace("Twitter投稿用のファイルが存在しませんでした。");
+                        }
                     } else {
-                        logger.trace("Twitter投稿用のファイルが存在しませんでした。");
+                        var mediaIDs = twimages[twi].mediaids;
+                        imageflg = true;
                     }
-                } else {
-                    logger.trace('こちらに通った')
-                    var mediaIDs = twimages[twi].mediaids;
-                    imageflg = true;
                 }
             }
         }
-    }
-    //logger.trace(rClient);
-    if (imageflg) {
-        //添付画像がある場合
-        //logger.trace(mediaIDs);
-        pv.media = { "media_ids": mediaIDs };
-        logger.trace(pv);
-        var { data: createdTweet } = await rClient.v2.tweet(pv)
-            .catch((err) => {
-                logger.error("Twitterへの投稿に失敗");
-                logger.trace(err);
-            });
-        if (createdTweet != undefined) {
-            mediaids_save(mediaIDs);
+
+        //情報変更時と終了時のpostを開始時にぶら下げるかどうか
+        var pvtwitter = {
+            text: pv
         }
-    } else {
-        //添付画像が無い場合
-        var result = ''
-        var { data: createdTweet } = await rClient.v2.tweet(pv)
-            .catch((err) => {
-                logger.error("Twitterへの投稿に失敗");
-                //logger.trace(err);
-                if (err.data.detail.indexOf('duplicate') > 0) {
-                    logger.error('同一の内容が送信されたため、次回"_"を付与して再送します。')
-                    StreamStart = `_${StreamStart}`
-                    result = 'duplicate'
-                } else {
-                    if (err.data.detail.indexOf('deleted or not visible') > 0) {
-                        logger.error('親ツリーが削除されたか閲覧できなくなっているためツリー表示を無効にしました。')
-                        endposttree = false
-                        replyposttree = false
-                        result = 'deleted'
+        switch (mode) {
+            case 'change':
+                if (twreplyposttree && ParentTID != null) {
+                    pvtwitter.reply = { in_reply_to_tweet_id: ParentTID }
+                }
+                break;
+            case 'end':
+                if (twendposttree && ParentTID != null) {
+                    pvtwitter.reply = { in_reply_to_tweet_id: ParentTID }
+                }
+                break;
+        }
+
+        //logger.trace(rClient);
+        if (imageflg) {
+            //添付画像がある場合
+            //logger.trace(mediaIDs);
+            pvtwitter.media = { "media_ids": mediaIDs };
+            logger.trace(pvtwitter);
+            var { data: createdTweet } = await rClient.v2.tweet(pvtwitter)
+                .catch((err) => {
+                    logger.error("Twitterへの投稿に失敗");
+                    logger.trace(err);
+                });
+            if (createdTweet != undefined) {
+                mediaids_save(mediaIDs);
+            }
+        } else {
+            //添付画像が無い場合
+            var result = ''
+            var { data: createdTweet } = await rClient.v2.tweet(pvtwitter)
+                .catch((err) => {
+                    logger.error("Twitterへの投稿に失敗");
+                    //logger.trace(err);
+                    if (err.data.detail.indexOf('duplicate') > 0) {
+                        logger.error('同一の内容が送信されたため、次回"_"を付与して再送します。')
+                        StreamStart = `_${StreamStart}`
+                        result = 'duplicate'
                     } else {
-                        if (err.data.detail.indexOf('Unauthorized') > 0) {
-                            postretry++
-                            logger.error(`Twitter認証エラー(${postretry}回目)`)
-                            result = 'unauthorized'
+                        if (err.data.detail.indexOf('deleted or not visible') > 0) {
+                            logger.error('親ツリーが削除されたか閲覧できなくなっているためツリー表示を無効にしました。')
+                            twendposttree = false
+                            twreplyposttree = false
+                            result = 'deleted'
                         } else {
-                            postretry++
-                            logger.error(`Twitter不明なエラー(${postretry}回目)`)
-                            result = 'other'
+                            if (err.data.detail.indexOf('Unauthorized') > 0) {
+                                twpostretry++
+                                logger.error(`Twitter認証エラー(${twpostretry}回目)`)
+                                result = 'unauthorized'
+                            } else {
+                                twpostretry++
+                                logger.error(`Twitter不明なエラー(${twpostretry}回目)`)
+                                result = 'other'
+                            }
                         }
                     }
-                }
-                logger.error(err.data.detail)
-                return ''
-            });
+                    logger.error(err.data.detail)
+                    return ''
+                });
+        }
+        if (createdTweet != undefined) {
+            logger.trace('Tweet:', createdTweet.id, ':', createdTweet.text);
+            switch (mode) {
+                case "start":
+                    logger.trace("Twitterに配信開始を投稿成功");
+                    ParentTID = createdTweet.id;
+                    break;
+                case "change":
+                    logger.trace("Twitterに配信内容変更を投稿成功");
+                    break;
+                case "end":
+                    logger.trace("Twitterに配信終了を投稿成功");
+                    break;
+                case "cycle":
+                    logger.trace("Twitterに定期通知を投稿成功");
+                    break;
+                default:
+                    logger.warn("Twitterに投稿はされましたが、ログ上はどのステータスが判別できませんでした。")
+                    break;
+            }
+            twpostretry = 0;
+            return 'Success'
+        } else {
+            return result
+        }
+    } else {
+        return 'Disable'
     }
-    if (createdTweet != undefined) {
-        logger.trace('Tweet:', createdTweet.id, ':', createdTweet.text);
+}
+
+const postmisskey = async (mode, pv) => {
+    if (settings.MisskeyAuth.enable) {
+        var pvmisskey = {
+            'i': settings.MisskeyAuth.token,
+            'visibility': settings.MisskeyPostSettings.visibility,
+            'text': pv,
+            'localOnly': settings.MisskeyPostSettings.localOnly
+        }
         switch (mode) {
-            case "start":
-                logger.trace("Twitterに配信開始を投稿成功");
-                ParentTID = createdTweet.id;
+            case 'change':
+                if (missreplyposttree && ParentTID != null) {
+                    pvmisskey.replyId = replyId
+                }
                 break;
-            case "change":
-                logger.trace("Twitterに配信内容変更を投稿成功");
-                break;
-            case "end":
-                logger.trace("Twitterに配信終了を投稿成功");
-                break;
-            case "cycle":
-                logger.trace("Twitterに定期通知を投稿成功");
-                break;
-            default:
-                logger.warn("Twitterに投稿はされましたが、ログ上はどのステータスが判別できませんでした。")
+            case 'end':
+                if (missendposttree && ParentTID != null) {
+                    pvmisskey.replyId = replyId
+                }
                 break;
         }
-        postretry = 0;
-        return 'Success'
+
+        const result = await fetch(`${settings.MisskeyAuth.server}/api/notes/create`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(pvmisskey)
+            }).then(res => {
+                return res.json()
+            }).catch(e => {
+                logger.error("Misskeyサーバーへの接続に失敗");
+                misspostretry++
+                return 'Network Error'
+            })
+
+        if (result != 'Network Error' && 'error' in result === false) {
+            logger.trace('Misskey:', result.createdNote.id, ':', result.createdNote.text);
+            switch (mode) {
+                case "start":
+                    logger.trace("Misskeyに配信開始を投稿成功");
+                    replyId = result.createdNote.id;
+                    break;
+                case "change":
+                    logger.trace("Misskeyに配信内容変更を投稿成功");
+                    break;
+                case "end":
+                    logger.trace("Misskeyに配信終了を投稿成功");
+                    break;
+                case "cycle":
+                    logger.trace("Misskeyに定期通知を投稿成功");
+                    break;
+                default:
+                    logger.warn("Misskeyに投稿はされましたが、ログ上はどのステータスが判別できませんでした。")
+                    break;
+            }
+            misspostretry = 0;
+            return 'Success'
+        } else {
+            if (result != 'Network Error') { misspostretry++ }
+            return result
+        }
     } else {
-        return result
+        return 'Disable'
     }
 }
 
@@ -308,14 +400,21 @@ const wait = async (options, roClient) => {
         var TwitchTokenDate = 0;
         // Twitchの配信情報が取得出来るか、試行回数を越えたらループ終了
         while (true) {
-            if (postretry >= maxpostretry) {
+            if (twpostretry >= maxpostretry) {
                 const message = 'Twitter投稿時に規定回数エラーが発生したため停止しました。\n設定または最新のログファイルを確認してください。'
                 await DiscordAlert(message)
-                throw new Error(`Twitterに連続して${postretry}回エラーとなったため強制終了しました。`)
+                throw new Error(`Twitterに連続して${twpostretry}回エラーとなったため強制終了しました。`)
+            }
+            if (misspostretry >= maxpostretry) {
+                const message = 'Misskey投稿時に規定回数エラーが発生したため停止しました。\n設定または最新のログファイルを確認してください。'
+                await DiscordAlert(message)
+                throw new Error(`Misskeyに連続して${misspostretry}回エラーとなったため強制終了しました。`)
             }
             if (i) {
-                //指定秒待つ処理、他の処理で少し時間がかかるので少しだけマイナス
-                const talkInSleep = await sleep(settings.General.intervalMs - 150);
+                //指定秒待つ処理
+                countdown = nexttime - Date.now()
+                nexttime += settings.General.intervalMs
+                const talkInSleep = await sleep(countdown);
             };
 
             // Twitchサーバーへの認証開始
@@ -345,17 +444,8 @@ const wait = async (options, roClient) => {
                         if (streamstatus == "live" && settings.TwitterPostSettings.endpost) {
                             postval = PostValueEx(settings.TwitterPostValue.StreamEnd, "end");
                             if (!settings.Test.testmode) {
-                                if (endposttree) {
-                                    postvalue = {
-                                        text: postval,
-                                        reply: { in_reply_to_tweet_id: ParentTID }
-                                    }
-                                } else {
-                                    postvalue = {
-                                        text: postval
-                                    }
-                                };
-                                await posttweet(roClient, "end", postvalue, twitchbody);
+                                await posttweet(roClient, "end", postval, twitchbody);
+                                await postmisskey("end", postval);
                             } else {
                                 logger.trace(`[テストモード]配信終了投稿内容: ${postval}`);
                             }
@@ -366,7 +456,7 @@ const wait = async (options, roClient) => {
                             pagination: {}
                         };
                         ParentTID = 0;
-                        postvalue = {};
+                        postval = {};
                         streamstatus = "end";
                         tgame_name = "";
                         ttitle = "";
@@ -376,41 +466,26 @@ const wait = async (options, roClient) => {
                     if (!tgame_name.length) {
                         //Twitchの配信情報が取得出来た状態
                         postval = PostValueEx(StreamStart, "start");
-                        postvalue = { text: postval };
 
                         if (!settings.Test.testmode) {
-                            var startresult = await posttweet(roClient, "start", postvalue, twitchbody);
-                            //const { data: createdTweet } = await roClient.v2.tweet(postvalue);
-                            //logger.trace("Twitterに配信開始を投稿成功");
-                            //logger.trace('Tweet:', createdTweet.id, ':', createdTweet.text);
-                            //ParentTID = createdTweet.id;
+                            var twstartresult = await posttweet(roClient, "start", postval, twitchbody);
+                            var missstartresult = await postmisskey("start", postval);
                         } else {
                             logger.trace(`[テストモード]配信開始投稿内容: ${postval}`);
                         }
-                        if (startresult == 'Success') {
+                        if ((twstartresult == 'Success') || (missstartresult == 'Success')) {
                             tgame_name = twitchbody.data[0].game_name;
                             ttitle = twitchbody.data[0].title;
                             streamstatus = "live";
                             streamstart = Date.parse(twitchbody.data[0].started_at);
                         }
-
-                        //streamstart = new Date(Date.now()).toUTCString()
                     } else {
                         //Twitchの配信情報の変更が確認された状態
                         if (((twitchbody.data[0].game_name != tgame_name) || (twitchbody.data[0].title != ttitle)) && (twitchbody.data[0].game_name != "Watch Parties")) {
                             postval = PostValueEx(settings.TwitterPostValue.StreamChange, "change");
                             if (!settings.Test.testmode) {
-                                if (replyposttree) {
-                                    postvalue = {
-                                        text: postval,
-                                        reply: { in_reply_to_tweet_id: ParentTID }
-                                    }
-                                } else {
-                                    postvalue = {
-                                        text: postval
-                                    }
-                                };
-                                await posttweet(roClient, "change", postvalue, twitchbody);
+                                await posttweet(roClient, "change", postval, twitchbody);
+                                await postmisskey("change", postval);
                             } else {
                                 logger.trace(`[テストモード]配信内容変更を投稿内容: ${postval}`);
                             }
@@ -427,10 +502,8 @@ const wait = async (options, roClient) => {
                                     }
                                     postval = PostValueEx(settings.TwitterPostValue.StreamCycle, "live");
                                     if (!settings.Test.testmode) {
-                                        postvalue = {
-                                            text: postval
-                                        }
-                                        await posttweet(roClient, "cycle", postvalue, twitchbody);
+                                        await posttweet(roClient, "cycle", postval, twitchbody);
+                                        await postmisskey("cycle", postval);
                                         streamstart = streamstart + settings.TwitterPostSettings.repeatcycle * 60 * 1000;
                                         cyclecount++;
                                     } else {
@@ -519,14 +592,18 @@ try {
         Authparams.append('grant_type', "client_credentials");
 
         // Twitterの認証情報
-        const twitterClient = new TwitterApi({
-            appKey: settings.TwitterAuth.appKey,
-            appSecret: settings.TwitterAuth.appSecret,
-            accessToken: settings.TwitterAuth.accessToken,
-            accessSecret: settings.TwitterAuth.accessSecret,
-        });
+        if (settings.TwitterAuth.enable) {
+            const twitterClient = new TwitterApi({
+                appKey: settings.TwitterAuth.appKey,
+                appSecret: settings.TwitterAuth.appSecret,
+                accessToken: settings.TwitterAuth.accessToken,
+                accessSecret: settings.TwitterAuth.accessSecret,
+            });
 
-        const roClient = twitterClient.readOnly;
+            var roClient = twitterClient.readOnly;
+        } else {
+            var roClient = '';
+        }
 
         if (settings.Test.testmode) {
             logger.trace("** テストモードで動作中です。Twitterに投稿されません。 **");
